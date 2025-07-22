@@ -129,8 +129,8 @@
 #### 步驟 1: 取得原始碼
 
 ```bash
-git clone https://your-repository-url.git
-cd TAIWANESE_SPEECH_ANALYZER
+git clone https://github.com/Kun-2000/speech-evaluation-system.git
+cd speech-evaluation-system
 ```
 
 #### 步驟 2: 建立並啟用 Python 虛擬環境
