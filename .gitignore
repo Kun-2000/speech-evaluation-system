@@ -1,3 +1,6 @@
+# macOS 系統檔案
+.DS_Store
+
 # 虛擬環境
 venv/
 
