@@ -1,0 +1,2114 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>語音轉錄評估系統</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+
+      :root {
+        --primary-gradient: linear-gradient(135deg, #00d4aa 0%, #00b894 100%);
+        --secondary-gradient: linear-gradient(135deg, #00cec9 0%, #55a3ff 100%);
+        --success-gradient: linear-gradient(135deg, #00d4aa 0%, #00b894 100%);
+        --warning-gradient: linear-gradient(135deg, #fdcb6e 0%, #e84393 100%);
+        --danger-gradient: linear-gradient(135deg, #e84393 0%, #fd79a8 100%);
+        --bg-gradient: linear-gradient(
+          135deg,
+          #0a0a0a 0%,
+          #1a1a2e 50%,
+          #16213e 100%
+        );
+        --glass-bg: rgba(0, 212, 170, 0.08);
+        --glass-border: rgba(0, 212, 170, 0.15);
+        --shadow-light: 0 8px 32px rgba(0, 212, 170, 0.1);
+        --shadow-medium: 0 12px 40px rgba(0, 212, 170, 0.15);
+        --shadow-heavy: 0 20px 60px rgba(0, 212, 170, 0.2);
+        --text-primary: #ffffff;
+        --text-secondary: #a0a0a0;
+        --text-light: rgba(255, 255, 255, 0.9);
+        --text-dim: rgba(255, 255, 255, 0.7);
+        --accent-green: #00d4aa;
+        --accent-cyan: #00cec9;
+        --border-radius: 16px;
+        --border-radius-sm: 8px;
+        --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+        background: var(--bg-gradient);
+        color: var(--text-primary);
+        line-height: 1.6;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+
+      /* 背景動畫 */
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(
+            circle at 20% 80%,
+            rgba(0, 212, 170, 0.15) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            circle at 80% 20%,
+            rgba(0, 206, 201, 0.1) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            circle at 40% 40%,
+            rgba(85, 163, 255, 0.08) 0%,
+            transparent 50%
+          );
+        animation: float 20s ease-in-out infinite;
+        z-index: -1;
+      }
+
+      @keyframes float {
+        0%,
+        100% {
+          transform: translateY(0px) rotate(0deg);
+        }
+        33% {
+          transform: translateY(-20px) rotate(1deg);
+        }
+        66% {
+          transform: translateY(10px) rotate(-1deg);
+        }
+      }
+
+      .container {
+        max-width: 420px;
+        margin: 0 auto;
+        background: var(--glass-bg);
+        backdrop-filter: blur(20px);
+        border: 1px solid var(--glass-border);
+        min-height: 100vh;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 0 50px rgba(0, 212, 170, 0.1);
+      }
+
+      .container::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(
+          180deg,
+          rgba(0, 212, 170, 0.05) 0%,
+          rgba(0, 184, 148, 0.02) 100%
+        );
+        pointer-events: none;
+      }
+
+      .header {
+        background: linear-gradient(
+          135deg,
+          rgba(0, 212, 170, 0.15) 0%,
+          rgba(0, 206, 201, 0.1) 100%
+        );
+        backdrop-filter: blur(20px);
+        border-bottom: 1px solid var(--glass-border);
+        color: var(--text-light);
+        padding: 30px 20px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .header::before {
+        content: "";
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(
+          circle,
+          rgba(0, 212, 170, 0.1) 0%,
+          transparent 70%
+        );
+        animation: headerGlow 8s ease-in-out infinite;
+      }
+
+      @keyframes headerGlow {
+        0%,
+        100% {
+          transform: rotate(0deg);
+        }
+        50% {
+          transform: rotate(180deg);
+        }
+      }
+
+      .header-content {
+        position: relative;
+        z-index: 1;
+      }
+
+      .header h1 {
+        font-size: 22px;
+        font-weight: 700;
+        margin-bottom: 8px;
+        text-shadow: 0 2px 20px rgba(0, 212, 170, 0.3);
+        background: linear-gradient(
+          135deg,
+          var(--accent-green),
+          var(--accent-cyan)
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .header .subtitle {
+        font-size: 14px;
+        opacity: 0.8;
+        font-weight: 400;
+        color: var(--text-dim);
+      }
+
+      .main-content {
+        padding: 25px 20px;
+        position: relative;
+        z-index: 1;
+      }
+
+      /* 模式切換器 */
+      .input-mode-switcher {
+        display: flex;
+        background: rgba(0, 212, 170, 0.05);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(0, 212, 170, 0.1);
+        border-radius: var(--border-radius);
+        padding: 6px;
+        margin-bottom: 25px;
+        box-shadow: var(--shadow-light);
+      }
+
+      .mode-button {
+        flex: 1;
+        padding: 12px 16px;
+        border: none;
+        border-radius: var(--border-radius-sm);
+        background: transparent;
+        color: var(--text-dim);
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        transition: var(--transition);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .mode-button::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(
+          135deg,
+          rgba(0, 212, 170, 0.1) 0%,
+          rgba(0, 206, 201, 0.05) 100%
+        );
+        opacity: 0;
+        transition: var(--transition);
+      }
+
+      .mode-button:hover::before {
+        opacity: 1;
+      }
+
+      .mode-button.active {
+        background: linear-gradient(
+          135deg,
+          rgba(0, 212, 170, 0.2) 0%,
+          rgba(0, 206, 201, 0.15) 100%
+        );
+        color: var(--accent-green);
+        box-shadow: 0 4px 20px rgba(0, 212, 170, 0.2);
+        transform: translateY(-1px);
+      }
+
+      /* 標準文本輸入區域 */
+      .reference-section {
+        background: rgba(0, 212, 170, 0.05);
+        backdrop-filter: blur(15px);
+        border: 2px solid rgba(0, 212, 170, 0.1);
+        border-radius: var(--border-radius);
+        padding: 20px;
+        margin-bottom: 20px;
+        transition: var(--transition);
+      }
+
+      .reference-section.ready {
+        border-color: rgba(0, 212, 170, 0.3);
+        background: rgba(0, 212, 170, 0.08);
+        box-shadow: 0 0 30px rgba(0, 212, 170, 0.15);
+      }
+
+      .reference-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-light);
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .reference-title::before {
+        content: "📄";
+        font-size: 18px;
+      }
+
+      .reference-textarea {
+        width: 100%;
+        background: rgba(0, 212, 170, 0.03);
+        border: 1px solid rgba(0, 212, 170, 0.1);
+        border-radius: var(--border-radius-sm);
+        padding: 12px 15px;
+        color: var(--text-light);
+        font-size: 14px;
+        line-height: 1.5;
+        resize: vertical;
+        min-height: 80px;
+        transition: var(--transition);
+      }
+
+      .reference-textarea:focus {
+        outline: none;
+        border-color: rgba(0, 212, 170, 0.3);
+        background: rgba(0, 212, 170, 0.05);
+        box-shadow: 0 0 20px rgba(0, 212, 170, 0.1);
+      }
+
+      .reference-textarea::placeholder {
+        color: var(--text-dim);
+      }
+
+      .reference-hint {
+        font-size: 12px;
+        color: var(--text-dim);
+        margin-top: 8px;
+        line-height: 1.4;
+      }
+
+      /* 輸入區域 */
+      .input-section {
+        background: rgba(0, 212, 170, 0.05);
+        backdrop-filter: blur(15px);
+        border: 2px solid rgba(0, 212, 170, 0.1);
+        border-radius: var(--border-radius);
+        padding: 35px 25px;
+        text-align: center;
+        margin-bottom: 25px;
+        min-height: 280px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        overflow: hidden;
+        transition: var(--transition);
+      }
+
+      .input-section::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(
+          45deg,
+          transparent 30%,
+          rgba(0, 212, 170, 0.05) 50%,
+          transparent 70%
+        );
+        transform: translateX(-100%);
+        transition: transform 0.6s ease;
+      }
+
+      .input-section:hover::before {
+        transform: translateX(100%);
+      }
+
+      .input-section.ready {
+        border-color: rgba(0, 212, 170, 0.3);
+        background: rgba(0, 212, 170, 0.08);
+        box-shadow: 0 0 30px rgba(0, 212, 170, 0.15);
+      }
+
+      .input-section.active {
+        border-color: rgba(0, 184, 148, 0.4);
+        background: rgba(0, 184, 148, 0.1);
+        box-shadow: 0 0 30px rgba(0, 184, 148, 0.2);
+        animation: activePulse 2s ease-in-out infinite;
+      }
+
+      @keyframes activePulse {
+        0%,
+        100% {
+          box-shadow: 0 0 30px rgba(0, 184, 148, 0.2);
+        }
+        50% {
+          box-shadow: 0 0 50px rgba(0, 184, 148, 0.3);
+        }
+      }
+
+      .input-section.processing {
+        border-color: rgba(0, 206, 201, 0.4);
+        background: rgba(0, 206, 201, 0.08);
+        box-shadow: 0 0 30px rgba(0, 206, 201, 0.2);
+      }
+
+      .input-section.completed {
+        border-color: rgba(0, 212, 170, 0.5);
+        background: rgba(0, 212, 170, 0.1);
+        box-shadow: 0 0 30px rgba(0, 212, 170, 0.25);
+      }
+
+      /* 檔案上傳樣式 */
+      .upload-content,
+      .file-selected,
+      .recording-content {
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        position: relative;
+        z-index: 1;
+      }
+
+      .upload-content.active,
+      .file-selected.active,
+      .recording-content.active {
+        display: flex;
+      }
+
+      .upload-text {
+        font-size: 22px;
+        color: var(--text-light);
+        margin-bottom: 8px;
+        font-weight: 600;
+        text-shadow: 0 2px 10px rgba(0, 212, 170, 0.3);
+      }
+
+      .upload-hint {
+        font-size: 13px;
+        color: var(--text-dim);
+        margin-bottom: 25px;
+        line-height: 1.5;
+        max-width: 280px;
+      }
+
+      .file-input {
+        display: none;
+      }
+
+      .upload-btn {
+        background: linear-gradient(
+          135deg,
+          rgba(0, 212, 170, 0.15) 0%,
+          rgba(0, 206, 201, 0.1) 100%
+        );
+        border: 1px solid rgba(0, 212, 170, 0.2);
+        color: var(--accent-green);
+        padding: 12px 24px;
+        border-radius: var(--border-radius-sm);
+        font-size: 15px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: var(--transition);
+        backdrop-filter: blur(10px);
+        position: relative;
+        overflow: hidden;
+        margin-bottom: 25px;
+      }
+
+      .upload-btn::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(0, 212, 170, 0.1),
+          transparent
+        );
+        transition: left 0.5s ease;
+      }
+
+      .upload-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 212, 170, 0.2);
+        border-color: rgba(0, 212, 170, 0.3);
+      }
+
+      .upload-btn:hover::before {
+        left: 100%;
+      }
+
+      /* 檔案資訊卡片 */
+      .file-info {
+        background: rgba(0, 212, 170, 0.08);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(0, 212, 170, 0.15);
+        border-radius: var(--border-radius-sm);
+        padding: 16px 20px;
+        margin-bottom: 20px;
+        min-width: 220px;
+        box-shadow: var(--shadow-medium);
+      }
+
+      .file-name {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-light);
+        margin-bottom: 5px;
+        word-break: break-all;
+      }
+
+      .file-size {
+        font-size: 13px;
+        color: var(--text-dim);
+      }
+
+      .file-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+      }
+
+      .file-action-btn {
+        padding: 10px 18px;
+        border: none;
+        border-radius: var(--border-radius-sm);
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: var(--transition);
+        backdrop-filter: blur(10px);
+      }
+
+      .change-file {
+        background: rgba(0, 206, 201, 0.15);
+        color: var(--accent-cyan);
+        border: 1px solid rgba(0, 206, 201, 0.2);
+      }
+
+      .remove-file {
+        background: rgba(232, 67, 147, 0.15);
+        color: #e84393;
+        border: 1px solid rgba(232, 67, 147, 0.2);
+      }
+
+      .file-action-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 15px rgba(0, 212, 170, 0.1);
+      }
+
+      /* 錄音樣式 */
+      .recording-status {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 20px;
+        color: var(--text-light);
+        min-height: 22px;
+        text-shadow: 0 2px 10px rgba(0, 212, 170, 0.3);
+      }
+
+      .record-button {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        border: 3px solid rgba(0, 212, 170, 0.3);
+        background: linear-gradient(
+          135deg,
+          rgba(0, 212, 170, 0.2) 0%,
+          rgba(0, 184, 148, 0.15) 100%
+        );
+        color: var(--accent-green);
+        font-size: 28px;
+        cursor: pointer;
+        transition: var(--transition);
+        margin-bottom: 25px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 8px 30px rgba(0, 212, 170, 0.2);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .record-button::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: radial-gradient(
+          circle,
+          rgba(0, 212, 170, 0.1) 0%,
+          transparent 70%
+        );
+        opacity: 0;
+        transition: var(--transition);
+      }
+
+      .record-button:hover:not(:disabled) {
+        transform: scale(1.05);
+        box-shadow: 0 12px 40px rgba(0, 212, 170, 0.3);
+        border-color: rgba(0, 212, 170, 0.5);
+      }
+
+      .record-button:hover:not(:disabled)::before {
+        opacity: 1;
+      }
+
+      .record-button:disabled {
+        background: rgba(160, 160, 160, 0.1);
+        color: var(--text-secondary);
+        cursor: not-allowed;
+        box-shadow: none;
+        border-color: rgba(160, 160, 160, 0.2);
+      }
+
+      .record-button.recording {
+        background: linear-gradient(
+          135deg,
+          rgba(0, 184, 148, 0.3) 0%,
+          rgba(0, 212, 170, 0.2) 100%
+        );
+        animation: recordingPulse 1.5s ease-in-out infinite;
+        box-shadow: 0 8px 30px rgba(0, 184, 148, 0.3);
+        border-color: rgba(0, 184, 148, 0.5);
+      }
+
+      @keyframes recordingPulse {
+        0%,
+        100% {
+          transform: scale(1);
+          box-shadow: 0 8px 30px rgba(0, 184, 148, 0.3);
+        }
+        50% {
+          transform: scale(1.1);
+          box-shadow: 0 12px 40px rgba(0, 184, 148, 0.4);
+        }
+      }
+
+      .recording-timer {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--accent-green);
+        margin-bottom: 15px;
+        font-family: "Courier New", monospace;
+        min-height: 30px;
+        text-shadow: 0 2px 10px rgba(0, 212, 170, 0.3);
+      }
+
+      .recording-hint {
+        font-size: 13px;
+        color: var(--text-dim);
+        line-height: 1.4;
+        min-height: 18px;
+      }
+
+      /* 處理步驟 */
+      .process-steps {
+        margin: 25px 0;
+        position: relative;
+      }
+
+      .step {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 15px 18px;
+        margin-bottom: 10px;
+        background: rgba(0, 212, 170, 0.05);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(0, 212, 170, 0.1);
+        border-radius: var(--border-radius-sm);
+        transition: var(--transition);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .step::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(
+          45deg,
+          transparent 30%,
+          rgba(0, 212, 170, 0.05) 50%,
+          transparent 70%
+        );
+        transform: translateX(-100%);
+        transition: transform 0.6s ease;
+      }
+
+      .step.processing::before {
+        transform: translateX(100%);
+        animation: stepShine 2s ease-in-out infinite;
+      }
+
+      @keyframes stepShine {
+        0% {
+          transform: translateX(-100%);
+        }
+        100% {
+          transform: translateX(100%);
+        }
+      }
+
+      .step.waiting {
+        border-color: rgba(0, 212, 170, 0.1);
+        background: rgba(0, 212, 170, 0.02);
+      }
+
+      .step.ready {
+        border-color: rgba(0, 212, 170, 0.3);
+        background: rgba(0, 212, 170, 0.08);
+        box-shadow: 0 4px 20px rgba(0, 212, 170, 0.1);
+      }
+
+      .step.processing {
+        border-color: rgba(0, 206, 201, 0.4);
+        background: rgba(0, 206, 201, 0.1);
+        box-shadow: 0 4px 20px rgba(0, 206, 201, 0.15);
+        animation: stepGlow 2s ease-in-out infinite;
+      }
+
+      @keyframes stepGlow {
+        0%,
+        100% {
+          box-shadow: 0 4px 20px rgba(0, 206, 201, 0.15);
+        }
+        50% {
+          box-shadow: 0 8px 30px rgba(0, 206, 201, 0.25);
+        }
+      }
+
+      .step.completed {
+        border-color: rgba(0, 184, 148, 0.4);
+        background: rgba(0, 184, 148, 0.1);
+        box-shadow: 0 4px 20px rgba(0, 184, 148, 0.15);
+      }
+
+      .step-left {
+        display: flex;
+        align-items: center;
+        flex: 1;
+      }
+
+      .step-icon {
+        font-size: 20px;
+        margin-right: 12px;
+        width: 24px;
+        text-align: center;
+        filter: drop-shadow(0 2px 8px rgba(0, 212, 170, 0.2));
+        color: var(--accent-green);
+      }
+
+      .step-text {
+        font-size: 15px;
+        font-weight: 500;
+        color: var(--text-light);
+      }
+
+      .step-status {
+        font-size: 12px;
+        padding: 6px 12px;
+        border-radius: 15px;
+        font-weight: 600;
+        backdrop-filter: blur(10px);
+        transition: var(--transition);
+      }
+
+      .step-status.waiting {
+        background: rgba(0, 212, 170, 0.05);
+        color: var(--text-dim);
+        border: 1px solid rgba(0, 212, 170, 0.1);
+      }
+
+      .step-status.ready {
+        background: rgba(0, 212, 170, 0.15);
+        color: var(--accent-green);
+        border: 1px solid rgba(0, 212, 170, 0.2);
+      }
+
+      .step-status.processing {
+        background: rgba(0, 206, 201, 0.15);
+        color: var(--accent-cyan);
+        border: 1px solid rgba(0, 206, 201, 0.2);
+      }
+
+      .step-status.completed {
+        background: rgba(0, 184, 148, 0.15);
+        color: var(--accent-green);
+        border: 1px solid rgba(0, 184, 148, 0.2);
+      }
+
+      .step-status.clickable {
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .step-status.clickable::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(0, 212, 170, 0.1),
+          transparent
+        );
+        transition: left 0.5s ease;
+      }
+
+      .step-status.clickable:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 15px rgba(0, 212, 170, 0.15);
+      }
+
+      .step-status.clickable:hover::before {
+        left: 100%;
+      }
+
+      .step-status.clickable:after {
+        content: " ↗";
+        font-size: 10px;
+        opacity: 0.8;
+      }
+
+      /* 操作按鈕 */
+      .action-btn {
+        width: 100%;
+        background: linear-gradient(
+          135deg,
+          rgba(0, 212, 170, 0.15) 0%,
+          rgba(0, 184, 148, 0.1) 100%
+        );
+        border: 1px solid rgba(0, 212, 170, 0.2);
+        color: var(--accent-green);
+        padding: 16px 20px;
+        border-radius: var(--border-radius);
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        margin: 25px 0 0 0;
+        transition: var(--transition);
+        backdrop-filter: blur(10px);
+        position: relative;
+        overflow: hidden;
+        box-shadow: var(--shadow-medium);
+      }
+
+      .action-btn::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(0, 212, 170, 0.1),
+          transparent
+        );
+        transition: left 0.5s ease;
+      }
+
+      .action-btn:hover:not(:disabled) {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 40px rgba(0, 212, 170, 0.2);
+        border-color: rgba(0, 212, 170, 0.3);
+      }
+
+      .action-btn:hover:not(:disabled)::before {
+        left: 100%;
+      }
+
+      .action-btn:disabled {
+        background: rgba(160, 160, 160, 0.05);
+        color: var(--text-secondary);
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+        border-color: rgba(160, 160, 160, 0.1);
+      }
+
+      .action-btn.processing {
+        background: linear-gradient(
+          135deg,
+          rgba(0, 206, 201, 0.2) 0%,
+          rgba(0, 212, 170, 0.15) 100%
+        );
+        color: var(--accent-cyan);
+        border-color: rgba(0, 206, 201, 0.3);
+      }
+
+      /* 載入狀態 */
+      .loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+      }
+
+      .spinner {
+        width: 20px;
+        height: 20px;
+        border: 2px solid rgba(0, 212, 170, 0.2);
+        border-top: 2px solid var(--accent-green);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* 彈窗樣式 */
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(8px);
+      }
+
+      .modal-content {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        backdrop-filter: blur(20px);
+        margin: 10% auto;
+        padding: 30px;
+        border-radius: var(--border-radius);
+        width: 90%;
+        max-width: 500px;
+        box-shadow: var(--shadow-heavy);
+        border: 1px solid rgba(0, 212, 170, 0.15);
+        position: relative;
+        overflow: hidden;
+        max-height: 80vh;
+        overflow-y: auto;
+      }
+
+      .modal-content::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(
+          135deg,
+          rgba(0, 212, 170, 0.05) 0%,
+          rgba(0, 184, 148, 0.02) 100%
+        );
+        pointer-events: none;
+      }
+
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid rgba(0, 212, 170, 0.1);
+        position: relative;
+        z-index: 1;
+      }
+
+      .modal-header h3 {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--text-primary);
+        background: linear-gradient(
+          135deg,
+          var(--accent-green),
+          var(--accent-cyan)
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .close {
+        color: var(--text-secondary);
+        font-size: 24px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: var(--transition);
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: rgba(0, 212, 170, 0.05);
+        border: 1px solid rgba(0, 212, 170, 0.1);
+      }
+
+      .close:hover {
+        color: var(--accent-green);
+        background: rgba(0, 212, 170, 0.1);
+        border-color: rgba(0, 212, 170, 0.2);
+      }
+
+      .modal-content-text {
+        background: rgba(0, 212, 170, 0.05);
+        padding: 20px;
+        border-radius: var(--border-radius-sm);
+        font-size: 14px;
+        line-height: 1.6;
+        color: var(--text-primary);
+        border-left: 4px solid var(--accent-green);
+        position: relative;
+        z-index: 1;
+        border: 1px solid rgba(0, 212, 170, 0.1);
+        white-space: pre-wrap;
+        word-wrap: break-word;
+      }
+
+      .error-message {
+        background: rgba(232, 67, 147, 0.1);
+        border: 1px solid rgba(232, 67, 147, 0.2);
+        color: #e84393;
+        padding: 15px 20px;
+        border-radius: var(--border-radius-sm);
+        margin: 20px 0;
+        font-size: 14px;
+        backdrop-filter: blur(10px);
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      /* 評估結果卡片 */
+      .evaluation-result {
+        background: rgba(0, 212, 170, 0.05);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(0, 212, 170, 0.1);
+        border-radius: var(--border-radius-sm);
+        padding: 20px;
+        margin: 20px 0;
+        display: none;
+      }
+
+      .evaluation-result.show {
+        display: block;
+        animation: slideInUp 0.5s ease-out;
+      }
+
+      @keyframes slideInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .metric-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin-bottom: 20px;
+      }
+
+      .metric-item {
+        background: rgba(0, 212, 170, 0.03);
+        border-radius: var(--border-radius-sm);
+        padding: 15px;
+        text-align: center;
+        border: 1px solid rgba(0, 212, 170, 0.08);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .metric-item::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(
+          135deg,
+          var(--accent-green),
+          var(--accent-cyan)
+        );
+      }
+
+      .metric-value {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--accent-green);
+        margin-bottom: 5px;
+        text-shadow: 0 2px 10px rgba(0, 212, 170, 0.3);
+      }
+
+      .metric-label {
+        font-size: 12px;
+        color: var(--text-dim);
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+      }
+
+      .accuracy-level {
+        background: rgba(0, 212, 170, 0.08);
+        border: 1px solid rgba(0, 212, 170, 0.15);
+        border-radius: var(--border-radius-sm);
+        padding: 12px 16px;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      .accuracy-level-title {
+        font-size: 14px;
+        color: var(--text-dim);
+        margin-bottom: 5px;
+        font-weight: 500;
+      }
+
+      .accuracy-level-value {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--accent-green);
+        text-shadow: 0 2px 10px rgba(0, 212, 170, 0.3);
+      }
+
+      .error-analysis {
+        background: rgba(0, 212, 170, 0.03);
+        border-radius: var(--border-radius-sm);
+        padding: 15px;
+        margin-bottom: 20px;
+        border: 1px solid rgba(0, 212, 170, 0.08);
+      }
+
+      .error-analysis-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-light);
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .error-analysis-title::before {
+        content: "📊";
+        font-size: 16px;
+      }
+
+      .error-types {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .error-type {
+        background: rgba(0, 212, 170, 0.1);
+        border: 1px solid rgba(0, 212, 170, 0.15);
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-size: 12px;
+        color: var(--text-light);
+        flex: 1;
+        min-width: 80px;
+        text-align: center;
+      }
+
+      .error-type-count {
+        display: block;
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--accent-green);
+        margin-bottom: 2px;
+      }
+
+      .error-type-label {
+        font-size: 10px;
+        color: var(--text-dim);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .suggestions-section {
+        background: rgba(0, 184, 148, 0.05);
+        border: 1px solid rgba(0, 184, 148, 0.1);
+        border-radius: var(--border-radius-sm);
+        padding: 15px;
+        border-left: 4px solid var(--accent-green);
+      }
+
+      .suggestions-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-light);
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .suggestions-title::before {
+        content: "💡";
+        font-size: 16px;
+      }
+
+      .suggestions-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      .suggestions-list li {
+        background: rgba(0, 212, 170, 0.05);
+        border: 1px solid rgba(0, 212, 170, 0.1);
+        border-radius: 6px;
+        padding: 8px 12px;
+        margin-bottom: 8px;
+        font-size: 13px;
+        color: var(--text-light);
+        line-height: 1.4;
+        position: relative;
+        padding-left: 24px;
+      }
+
+      .suggestions-list li::before {
+        content: "•";
+        position: absolute;
+        left: 12px;
+        color: var(--accent-green);
+        font-weight: bold;
+      }
+
+      .suggestions-list li:last-child {
+        margin-bottom: 0;
+      }
+
+      /* 浮動粒子背景 */
+      .floating-particles {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        pointer-events: none;
+      }
+
+      .particle {
+        position: absolute;
+        background: rgba(0, 212, 170, 0.1);
+        border-radius: 50%;
+        animation: float-particle 15s infinite linear;
+      }
+
+      @keyframes float-particle {
+        0% {
+          transform: translateY(100vh) rotate(0deg);
+          opacity: 0;
+        }
+        10% {
+          opacity: 1;
+        }
+        90% {
+          opacity: 1;
+        }
+        100% {
+          transform: translateY(-100px) rotate(360deg);
+          opacity: 0;
+        }
+      }
+
+      /* 響應式設計 */
+      @media (max-width: 480px) {
+        .container {
+          max-width: 100%;
+        }
+
+        .main-content {
+          padding: 20px 15px;
+        }
+
+        .input-section {
+          padding: 30px 20px;
+          min-height: 280px;
+        }
+
+        .record-button {
+          width: 90px;
+          height: 90px;
+          font-size: 24px;
+        }
+
+        .upload-text {
+          font-size: 18px;
+        }
+
+        .modal-content {
+          margin: 20% auto;
+          padding: 20px;
+          width: 95%;
+        }
+
+        .metric-grid {
+          grid-template-columns: 1fr;
+          gap: 10px;
+        }
+
+        .error-types {
+          flex-direction: column;
+          gap: 8px;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- 浮動粒子背景 -->
+    <div class="floating-particles" id="particles"></div>
+
+    <div class="container">
+      <div class="header">
+        <div class="header-content">
+          <h1>語音轉錄評估系統</h1>
+          <div class="subtitle">語音準確性分析與品質評估</div>
+        </div>
+      </div>
+
+      <div class="main-content">
+        <!-- 輸入模式切換 -->
+        <div class="input-mode-switcher">
+          <button class="mode-button active" onclick="switchToUpload()">
+            檔案上傳
+          </button>
+          <button class="mode-button" onclick="switchToRecording()">
+            即時錄音
+          </button>
+        </div>
+
+        <!-- 統一的輸入區域 -->
+        <div class="input-section" id="inputSection">
+          <!-- 檔案上傳內容 -->
+          <div class="upload-content active" id="uploadContent">
+            <input
+              type="file"
+              id="audioFile"
+              class="file-input"
+              accept=".mp3,.wav,.m4a,.aac,.ogg,.webm,.flac,.mp4,.avi,.mov"
+              onchange="handleFileSelect(event)"
+            />
+            <div class="upload-text">選擇音頻檔案</div>
+            <button
+              class="upload-btn"
+              onclick="document.getElementById('audioFile').click()"
+            >
+              瀏覽檔案
+            </button>
+            <div class="upload-hint">
+              支援 MP3、WAV、M4A 等多種音頻格式<br />檔案大小限制 100MB
+            </div>
+          </div>
+
+          <!-- 檔案已選中 -->
+          <div class="file-selected" id="fileSelected">
+            <div class="upload-text">檔案已準備</div>
+            <div class="file-info">
+              <div id="fileName" class="file-name"></div>
+              <div id="fileSize" class="file-size"></div>
+            </div>
+            <div class="file-actions">
+              <button
+                class="file-action-btn change-file"
+                onclick="document.getElementById('audioFile').click()"
+              >
+                更換檔案
+              </button>
+              <button
+                class="file-action-btn remove-file"
+                onclick="removeFile()"
+              >
+                移除檔案
+              </button>
+            </div>
+          </div>
+
+          <!-- 錄音內容 -->
+          <div class="recording-content" id="recordingContent">
+            <button
+              class="record-button"
+              id="recordButton"
+              onclick="toggleRecording()"
+            >
+              ●
+            </button>
+            <div class="recording-timer" id="recordingTimer">00:00</div>
+            <div class="recording-hint" id="recordingHint">點擊開始錄音</div>
+          </div>
+        </div>
+
+        <!-- 標準文本輸入區域 -->
+        <div class="reference-section" id="referenceSection">
+          <div class="reference-title">標準參考文本</div>
+          <textarea
+            id="referenceText"
+            class="reference-textarea"
+            placeholder="請輸入標準文本作為評估基準&#10;範例：今天天氣真好，適合出去走走。"
+            oninput="updateReferenceText()"
+          ></textarea>
+          <div class="reference-hint">
+            請輸入您希望用來比對的標準文本，系統將分析語音轉錄的準確性
+          </div>
+        </div>
+
+        <!-- 處理步驟 -->
+        <div class="process-steps">
+          <div class="step waiting" id="step1">
+            <div class="step-left">
+              <div class="step-icon">📁</div>
+              <div class="step-text" id="step1Text">準備輸入</div>
+            </div>
+            <div class="step-status waiting" id="step1Status">等待中</div>
+          </div>
+
+          <div class="step waiting" id="step2">
+            <div class="step-left">
+              <div class="step-icon">🎙️</div>
+              <div class="step-text">語音轉文字</div>
+            </div>
+            <div class="step-status waiting" id="step2Status">等待中</div>
+          </div>
+
+          <div class="step waiting" id="step3">
+            <div class="step-left">
+              <div class="step-icon">🧠</div>
+              <div class="step-text">準確性分析</div>
+            </div>
+            <div class="step-status waiting" id="step3Status">等待中</div>
+          </div>
+
+          <div class="step waiting" id="step4">
+            <div class="step-left">
+              <div class="step-icon">📊</div>
+              <div class="step-text">評估報告</div>
+            </div>
+            <div class="step-status waiting" id="step4Status">等待中</div>
+          </div>
+        </div>
+
+        <!-- 評估結果顯示 -->
+        <div class="evaluation-result" id="evaluationResult">
+          <!-- 評估等級顯示 -->
+          <div class="accuracy-level" id="accuracyLevel" style="display: none">
+            <div class="accuracy-level-title">評估等級</div>
+            <div class="accuracy-level-value" id="accuracyLevelValue">--</div>
+          </div>
+
+          <div class="metric-grid">
+            <div class="metric-item">
+              <div class="metric-value" id="accuracyScore">--</div>
+              <div class="metric-label">準確率 (%)</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-value" id="similarityScore">--</div>
+              <div class="metric-label">語意相似度 (%)</div>
+            </div>
+          </div>
+
+          <div class="error-analysis">
+            <div class="error-analysis-title">錯誤分析統計</div>
+            <div class="error-types">
+              <div class="error-type">
+                <span class="error-type-count" id="substitutions">0</span>
+                <span class="error-type-label">替換錯誤</span>
+              </div>
+              <div class="error-type">
+                <span class="error-type-count" id="deletions">0</span>
+                <span class="error-type-label">刪除錯誤</span>
+              </div>
+              <div class="error-type">
+                <span class="error-type-count" id="insertions">0</span>
+                <span class="error-type-label">插入錯誤</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="suggestions-section" id="suggestionsSection">
+            <div class="suggestions-title">改進建議</div>
+            <ul class="suggestions-list" id="suggestionsList">
+              <li>等待分析結果...</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- 操作按鈕 -->
+        <button
+          class="action-btn"
+          id="actionBtn"
+          onclick="startEvaluation()"
+          disabled
+        >
+          <span id="btnText">請先輸入標準文本和選擇音頻</span>
+          <div class="loading hidden" id="btnLoading">
+            <div class="spinner"></div>
+            評估中...
+          </div>
+        </button>
+
+        <!-- 新增的重設按鈕 -->
+        <button
+          class="action-btn hidden"
+          id="resetBtn"
+          onclick="resetEvaluation()"
+        >
+          <span id="resetBtnText">進行新評估</span>
+        </button>
+
+        <!-- 錯誤訊息 -->
+        <div id="errorMessage" class="error-message hidden"></div>
+      </div>
+    </div>
+
+    <!-- 轉錄結果彈窗 -->
+    <div id="transcriptionModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>語音轉錄結果</h3>
+          <span class="close" onclick="closeTranscriptionModal()">&times;</span>
+        </div>
+        <div class="modal-content-text" id="transcriptionText">
+          等待轉錄結果...
+        </div>
+      </div>
+    </div>
+
+    <!-- 分析詳情彈窗 -->
+    <div id="analysisModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>詳細分析結果</h3>
+          <span class="close" onclick="closeAnalysisModal()">&times;</span>
+        </div>
+        <div class="modal-content-text" id="analysisText">等待分析結果...</div>
+      </div>
+    </div>
+
+    <!-- 報告預覽彈窗 -->
+    <div id="reportModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>評估報告預覽</h3>
+          <span class="close" onclick="closeReportModal()">&times;</span>
+        </div>
+        <div class="modal-content-text" id="reportText">載入報告中...</div>
+      </div>
+    </div>
+
+    <script>
+      // 狀態變數
+      let selectedFile = null;
+      let referenceText = "";
+      let transcriptionResult = "";
+      let evaluationResult = null;
+      let isRecording = false;
+      let recordingTimer = null;
+      let recordingStartTime = null;
+      let currentInputMode = "upload";
+      let isProcessing = false;
+
+      // DOM 元素快取，提升效能
+      const dom = {
+        modeButtons: document.querySelectorAll(".mode-button"),
+        uploadContent: document.getElementById("uploadContent"),
+        recordingContent: document.getElementById("recordingContent"),
+        fileSelected: document.getElementById("fileSelected"),
+        step1Text: document.getElementById("step1Text"),
+        recordButton: document.getElementById("recordButton"),
+        recordingHint: document.getElementById("recordingHint"),
+        inputSection: document.getElementById("inputSection"),
+        recordingTimer: document.getElementById("recordingTimer"),
+        audioFile: document.getElementById("audioFile"),
+        fileName: document.getElementById("fileName"),
+        fileSize: document.getElementById("fileSize"),
+        referenceText: document.getElementById("referenceText"),
+        referenceSection: document.getElementById("referenceSection"),
+        actionBtn: document.getElementById("actionBtn"),
+        btnText: document.getElementById("btnText"),
+        btnLoading: document.getElementById("btnLoading"),
+        resetBtn: document.getElementById("resetBtn"),
+        errorMessage: document.getElementById("errorMessage"),
+        evaluationResult: document.getElementById("evaluationResult"),
+        accuracyLevel: document.getElementById("accuracyLevel"),
+        accuracyLevelValue: document.getElementById("accuracyLevelValue"),
+        accuracyScore: document.getElementById("accuracyScore"),
+        similarityScore: document.getElementById("similarityScore"),
+        substitutions: document.getElementById("substitutions"),
+        deletions: document.getElementById("deletions"),
+        insertions: document.getElementById("insertions"),
+        suggestionsList: document.getElementById("suggestionsList"),
+        transcriptionModal: document.getElementById("transcriptionModal"),
+        transcriptionText: document.getElementById("transcriptionText"),
+        analysisModal: document.getElementById("analysisModal"),
+        analysisText: document.getElementById("analysisText"),
+        reportModal: document.getElementById("reportModal"),
+        reportText: document.getElementById("reportText"),
+        particles: document.getElementById("particles"),
+      };
+
+      // --- 初始化函式 ---
+      function initParticles() {
+        const particleCount = 12;
+        for (let i = 0; i < particleCount; i++) {
+          const particle = document.createElement("div");
+          particle.className = "particle";
+          particle.style.left = `${Math.random() * 100}%`;
+          const size = Math.random() * 3 + 2;
+          particle.style.width = `${size}px`;
+          particle.style.height = `${size}px`;
+          particle.style.animationDelay = `${Math.random() * 15}s`;
+          particle.style.animationDuration = `${Math.random() * 10 + 12}s`;
+          dom.particles.appendChild(particle);
+        }
+      }
+
+      // --- UI 切換與狀態更新函式 ---
+      function updateReferenceText() {
+        referenceText = dom.referenceText.value.trim();
+        dom.referenceSection.classList.toggle("ready", !!referenceText);
+        updateActionButton();
+      }
+
+      function switchToUpload() {
+        if (isProcessing) return;
+        currentInputMode = "upload";
+        dom.modeButtons[0].classList.add("active");
+        dom.modeButtons[1].classList.remove("active");
+        dom.uploadContent.classList.add("active");
+        dom.recordingContent.classList.remove("active");
+        dom.fileSelected.classList.remove("active");
+        dom.step1Text.textContent = "檔案準備";
+        resetEvaluation();
+      }
+
+      function switchToRecording() {
+        if (isProcessing) return;
+        currentInputMode = "recording";
+        dom.modeButtons[0].classList.remove("active");
+        dom.modeButtons[1].classList.add("active");
+        dom.uploadContent.classList.remove("active");
+        dom.fileSelected.classList.remove("active");
+        dom.recordingContent.classList.add("active");
+        dom.step1Text.textContent = "錄音準備";
+        resetEvaluation();
+      }
+
+      // --- 錄音相關函式 ---
+      async function toggleRecording() {
+        if (isProcessing) return;
+        await (isRecording ? stopRecording() : startRecording());
+      }
+
+      async function startRecording() {
+        try {
+          const response = await fetch("/recording/start", { method: "POST" });
+          if (!response.ok)
+            throw new Error(`HTTP 錯誤! 狀態: ${response.status}`);
+          const data = await response.json();
+
+          if (data.success) {
+            isRecording = true;
+            recordingStartTime = Date.now();
+            dom.recordButton.classList.add("recording");
+            dom.recordButton.textContent = "⏹️";
+            dom.recordingHint.textContent = "點擊停止錄音";
+            dom.inputSection.className = "input-section active";
+            startRecordingTimer();
+            updateStep("step1", "processing", "錄音中");
+            updateActionButton();
+          } else {
+            showError(`無法開始錄音：${data.error || "未知錯誤"}`);
+          }
+        } catch (error) {
+          showError(`錄音開始失敗：${error.message}`);
+        }
+      }
+
+      async function stopRecording() {
+        if (!referenceText) {
+          showError("請先輸入標準參考文本才能進行評估");
+          return;
+        }
+
+        isProcessing = true;
+        if (recordingTimer) clearInterval(recordingTimer);
+        recordingTimer = null;
+        dom.inputSection.className = "input-section processing";
+        updateStep("step1", "completed", "錄音完成");
+        updateStep("step2", "processing", "轉錄中...");
+        updateStep("step3", "processing", "分析中...");
+        updateStep("step4", "processing", "生成報告...");
+        updateActionButton();
+
+        try {
+          const response = await fetch("/recording/stop", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ reference_text: referenceText }),
+          });
+
+          if (!response.ok)
+            throw new Error(`HTTP 錯誤! 狀態: ${response.status}`);
+          const data = await response.json();
+
+          if (data.success) {
+            dom.inputSection.className = "input-section completed";
+            evaluationResult = data;
+            await handleEvaluationResult(data);
+          } else {
+            throw new Error(data.error || "錄音處理失敗");
+          }
+        } catch (error) {
+          showError(`錄音處理失敗：${error.message}`);
+          resetStepsAfter(1);
+        } finally {
+          isProcessing = false;
+          if (evaluationResult || dom.errorMessage.textContent) {
+            dom.actionBtn.classList.add("hidden");
+            dom.resetBtn.classList.remove("hidden");
+          } else {
+            updateActionButton();
+          }
+          resetRecordingState();
+        }
+      }
+
+      function resetRecordingState() {
+        isRecording = false;
+        dom.recordButton.classList.remove("recording");
+        dom.recordButton.textContent = "●";
+        dom.recordingTimer.textContent = "00:00";
+        dom.recordingHint.textContent = "點擊開始錄音";
+        if (recordingTimer) clearInterval(recordingTimer);
+        recordingTimer = null;
+      }
+
+      function startRecordingTimer() {
+        recordingTimer = setInterval(() => {
+          if (recordingStartTime) {
+            const elapsed = Math.floor(
+              (Date.now() - recordingStartTime) / 1000
+            );
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+            dom.recordingTimer.textContent = `${minutes
+              .toString()
+              .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+          }
+        }, 1000);
+      }
+
+      // --- 檔案處理函式 ---
+      function handleFileSelect(event) {
+        const file = event.target.files[0];
+        if (file) handleFile(file);
+      }
+
+      function handleFile(file) {
+        selectedFile = file;
+        dom.fileName.textContent = file.name;
+        dom.fileSize.textContent = formatFileSize(file.size);
+        dom.uploadContent.classList.remove("active");
+        dom.fileSelected.classList.add("active");
+        dom.inputSection.className = "input-section ready";
+        updateStep("step1", "ready", "檔案已選");
+        resetStepsAfter(1);
+        hideError();
+        updateActionButton();
+      }
+
+      function removeFile() {
+        selectedFile = null;
+        dom.uploadContent.classList.add("active");
+        dom.fileSelected.classList.remove("active");
+        dom.inputSection.className = "input-section";
+        dom.audioFile.value = "";
+        updateStep("step1", "waiting", "等待中");
+        resetStepsAfter(1);
+        updateActionButton();
+        hideEvaluationResult();
+      }
+
+      function formatFileSize(bytes) {
+        if (bytes === 0) return "0 Bytes";
+        const k = 1024;
+        const sizes = ["Bytes", "KB", "MB", "GB"];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+      }
+
+      // --- 核心流程與 UI 更新 ---
+      function updateStep(stepId, status, text) {
+        const step = document.getElementById(stepId);
+        const statusEl = document.getElementById(`${stepId}Status`);
+        step.className = `step ${status}`;
+        statusEl.className = `step-status ${status}`;
+        statusEl.textContent = text;
+        statusEl.onclick = null; // 重設點擊事件
+
+        if (status === "completed") {
+          statusEl.classList.add("clickable");
+          if (stepId === "step2") statusEl.onclick = () => showTranscription();
+          else if (stepId === "step3")
+            statusEl.onclick = () => showAnalysisDetails();
+          else if (stepId === "step4")
+            statusEl.onclick = () => showReportPreview();
+        }
+      }
+
+      function updateActionButton() {
+        const btnText = dom.btnText;
+        const btnLoading = dom.btnLoading;
+        const btn = dom.actionBtn;
+
+        if (isProcessing) {
+          btn.disabled = true;
+          btn.classList.add("processing");
+          btnText.classList.add("hidden");
+          btnLoading.classList.remove("hidden");
+          return;
+        }
+
+        btnText.classList.remove("hidden");
+        btnLoading.classList.add("hidden");
+        btn.classList.remove("processing");
+
+        if (!referenceText) {
+          btn.disabled = true;
+          btnText.textContent = "請先輸入標準文本";
+        } else if (currentInputMode === "upload") {
+          if (selectedFile) {
+            btn.disabled = false;
+            btnText.textContent = "開始評估";
+          } else {
+            btn.disabled = true;
+            btnText.textContent = "請選擇音頻檔案";
+          }
+        } else {
+          btn.disabled = true;
+          btnText.textContent = "請使用錄音按鈕";
+        }
+      }
+
+      async function startEvaluation() {
+        if (!selectedFile || !referenceText || isProcessing) return;
+
+        isProcessing = true;
+        hideError();
+        hideEvaluationResult();
+        updateActionButton();
+        dom.inputSection.className = "input-section processing";
+
+        const formData = new FormData();
+        formData.append("audio", selectedFile);
+        formData.append("reference_text", referenceText);
+
+        try {
+          updateStep("step2", "processing", "轉錄中...");
+          updateStep("step3", "processing", "分析中...");
+          updateStep("step4", "processing", "生成報告...");
+
+          const response = await fetch("/evaluation/analyze", {
+            method: "POST",
+            body: formData,
+          });
+
+          if (!response.ok)
+            throw new Error(`HTTP 錯誤! 狀態: ${response.status}`);
+          const data = await response.json();
+
+          if (data.success) {
+            dom.inputSection.className = "input-section completed";
+            evaluationResult = data;
+            await handleEvaluationResult(data);
+          } else {
+            throw new Error(data.error || "評估失敗");
+          }
+        } catch (error) {
+          showError(`評估過程發生錯誤：${error.message}`);
+          dom.inputSection.className = "input-section ready";
+          resetStepsAfter(1);
+        } finally {
+          isProcessing = false;
+          if (evaluationResult || dom.errorMessage.textContent) {
+            dom.actionBtn.classList.add("hidden");
+            dom.resetBtn.classList.remove("hidden");
+          } else {
+            updateActionButton();
+          }
+        }
+      }
+
+      async function handleEvaluationResult(data) {
+        if (
+          !data ||
+          !data.transcription ||
+          !data.comparison ||
+          !data.evaluation_metrics
+        ) {
+          showError("評估結果數據不完整或格式錯誤");
+          resetStepsAfter(1);
+          return;
+        }
+        transcriptionResult = data.transcription.transcript || "無轉錄結果";
+        updateStep("step2", "completed", "查看轉錄");
+        updateStep("step3", "completed", "查看詳情");
+        updateStep("step4", "completed", "查看報告");
+        showEvaluationResult(data);
+      }
+
+      function showEvaluationResult(data) {
+        const metrics = data.evaluation_metrics;
+        const comparison = data.comparison;
+
+        dom.accuracyScore.textContent = (metrics.accuracy_score ?? 0).toFixed(
+          1
+        );
+        dom.similarityScore.textContent = (
+          metrics.semantic_similarity ?? 0
+        ).toFixed(1);
+
+        if (metrics.accuracy_level) {
+          dom.accuracyLevelValue.textContent = metrics.accuracy_level;
+          dom.accuracyLevel.style.display = "block";
+        }
+
+        const errorAnalysis = comparison.error_analysis || {};
+        dom.substitutions.textContent = errorAnalysis.substitutions ?? 0;
+        dom.deletions.textContent = errorAnalysis.deletions ?? 0;
+        dom.insertions.textContent = errorAnalysis.insertions ?? 0;
+
+        const suggestions = comparison.suggestions || [];
+        dom.suggestionsList.innerHTML = "";
+        if (suggestions.length > 0) {
+          suggestions.forEach((suggestion) => {
+            const li = document.createElement("li");
+            li.textContent = suggestion;
+            dom.suggestionsList.appendChild(li);
+          });
+        } else {
+          dom.suggestionsList.innerHTML = "<li>暫無特定建議</li>";
+        }
+
+        dom.evaluationResult.classList.add("show");
+      }
+
+      // --- 重設與清理函式 ---
+      function resetEvaluation() {
+        dom.actionBtn.classList.remove("hidden");
+        dom.resetBtn.classList.add("hidden");
+
+        selectedFile = null;
+        referenceText = "";
+        transcriptionResult = "";
+        evaluationResult = null;
+        isProcessing = false;
+
+        dom.referenceText.value = "";
+        dom.audioFile.value = "";
+
+        dom.uploadContent.classList.toggle(
+          "active",
+          currentInputMode === "upload"
+        );
+        dom.fileSelected.classList.remove("active");
+        dom.inputSection.className = "input-section";
+        dom.referenceSection.classList.remove("ready");
+
+        hideEvaluationResult();
+        resetAllSteps();
+        updateActionButton();
+        hideError();
+        resetRecordingState();
+      }
+
+      function resetStepsAfter(stepNum) {
+        for (let i = stepNum + 1; i <= 4; i++) {
+          updateStep(`step${i}`, "waiting", "等待中");
+        }
+      }
+
+      function hideEvaluationResult() {
+        dom.evaluationResult.classList.remove("show");
+        dom.accuracyLevel.style.display = "none";
+      }
+
+      // --- 彈窗 (Modal) 處理函式 ---
+      function showModal(modal) {
+        modal.style.display = "block";
+      }
+
+      function closeModal(modal) {
+        modal.style.display = "none";
+      }
+
+      function showTranscription() {
+        dom.transcriptionText.textContent =
+          transcriptionResult || "暫無轉錄結果";
+        showModal(dom.transcriptionModal);
+      }
+
+      function closeTranscriptionModal() {
+        closeModal(dom.transcriptionModal);
+      }
+
+      function showAnalysisDetails() {
+        if (!evaluationResult || !evaluationResult.comparison) {
+          dom.analysisText.textContent = "暫無分析結果";
+        } else {
+          const { summary, reasoning, key_differences } =
+            evaluationResult.comparison;
+          const analysisText = `評估摘要：\n${
+            summary || "無摘要"
+          }\n\n分析理由：\n${reasoning || "無詳細理由"}\n\n主要差異：\n${
+            (key_differences || []).join("\n") || "無主要差異"
+          }`.trim();
+          dom.analysisText.textContent = analysisText;
+        }
+        showModal(dom.analysisModal);
+      }
+
+      function closeAnalysisModal() {
+        closeModal(dom.analysisModal);
+      }
+
+      function showReportPreview() {
+        if (!evaluationResult) {
+          dom.reportText.textContent = "暫無報告數據";
+        } else {
+          const {
+            evaluation_id,
+            processing_time,
+            comparison,
+            evaluation_metrics,
+          } = evaluationResult;
+
+          const reportText = `評估ID：${evaluation_id || "未知"}
+處理時間：${(processing_time || 0).toFixed(2)} 秒
+
+評估等級：${evaluation_metrics?.accuracy_level || "未評級"}
+
+整體指標：
+• 準確率：${(evaluation_metrics?.accuracy_score ?? 0).toFixed(1)}%
+• 語意相似度：${(evaluation_metrics?.semantic_similarity ?? 0).toFixed(1)}%
+
+錯誤統計：
+• 替換錯誤：${comparison?.error_analysis?.substitutions ?? 0} 個
+• 刪除錯誤：${comparison?.error_analysis?.deletions ?? 0} 個
+• 插入錯誤：${comparison?.error_analysis?.insertions ?? 0} 個
+
+建議：
+${
+  (comparison?.suggestions || []).map((s) => `• ${s}`).join("\n") ||
+  "暫無特定建議"
+}`.trim();
+          dom.reportText.textContent = reportText;
+        }
+        showModal(dom.reportModal);
+      }
+
+      function closeReportModal() {
+        closeModal(dom.reportModal);
+      }
+
+      // --- 錯誤處理 ---
+      function showError(message) {
+        dom.errorMessage.textContent = message;
+        dom.errorMessage.classList.remove("hidden");
+      }
+
+      function hideError() {
+        dom.errorMessage.classList.add("hidden");
+      }
+
+      // --- 全域事件監聽 ---
+      window.onclick = function (event) {
+        if (event.target.classList.contains("modal")) {
+          closeModal(event.target);
+        }
+      };
+
+      window.onload = function () {
+        initParticles();
+        checkApiStatus();
+        updateActionButton();
+      };
+
+      async function checkApiStatus() {
+        try {
+          const response = await fetch("/status");
+          if (!response.ok) throw new Error("API 服務響應異常");
+          const data = await response.json();
+          if (data.app_status !== "running") {
+            showError("API 服務未正常運行，請檢查後端服務狀態");
+          }
+        } catch (error) {
+          showError(`無法連接到 API 服務：${error.message}`);
+        }
+      }
+    </script>
+  </body>
+</html>

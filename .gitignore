@@ -1,0 +1,27 @@
+# 虛擬環境
+venv/
+
+# Python 快取檔案
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# 環境變數檔案
+.env
+
+# Flask Session 密鑰檔案
+.secret_key
+
+# 日誌與暫存檔
+data/logs/
+data/temp/
+data-temp/
+*.log
+
+# 上傳的音訊檔案
+data/uploads/
+
+# IDE/編輯器設定檔
+.vscode/
+.idea/
